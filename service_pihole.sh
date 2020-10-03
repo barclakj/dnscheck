@@ -6,6 +6,12 @@ INFLUXDB=telegraf
 INFLUXHOST_PORT=192.168.50.81:8086
 HOSTNAME=`hostname`
 
+function raiseAlert() {
+    INFLUXDATA=`echo "DNSALERT,HOSTNAME="${HOSTNAME}",MSG="$1" alert=1 "${TS}`
+	curl -XPOST http://${INFLUXHOST_PORT}/write?db=${INFLUXDB} --data-binary "${INFLUXDATA}"
+    echo ${INFLUXDATA}
+}
+
 function restartPiHole() {
     sudo systemctl stop pihole-FTL
     sudo systemctl stop privoxy
@@ -36,7 +42,9 @@ STATUS=`${SCRIPT_PATH}/checkdns.sh 127.0.0.1 53 -noexport | grep "IS DOWN!" | wc
 if [ ${STATUS} == "1" ]
 then
     echo "Failed to resolve... Restarting P-iHole."
+    raiseAlert "RESTART_PIHOLE"
     restartPiHole
+
 fi
 
 STATUS=`${SCRIPT_PATH}/checkdns.sh 127.0.0.1 53 -noexport | grep "IS DOWN!" | wc -l`
@@ -50,9 +58,11 @@ then
     if test -f "${SCRIPT_PATH}/RESTART"
     then
         echo "Rebooted once already... not retrying"
+        raiseAlert "SERVICE_FAILED"        
     else
         echo "RESTARTED" > ${SCRIPT_PATH}/RESTART
         echo "Rebooting..."
+        raiseAlert "REBOOT_HOST"
         sleep 10
         sudo reboot now
     fi
