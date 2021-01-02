@@ -42,7 +42,7 @@ STATUS=`${SCRIPT_PATH}/checkdns.sh 127.0.0.1 53 -noexport | grep "IS DOWN!" | wc
 if [ ${STATUS} == "1" ]
 then
     echo "Failed to resolve... Restarting P-iHole."
-    raiseAlert "RESTART_PIHOLE"
+    # raiseAlert "RESTART_PIHOLE"
     restartPiHole
 
 fi
